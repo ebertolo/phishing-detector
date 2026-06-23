@@ -148,20 +148,6 @@ The experiment scripts use a **stratified** split — train / validation
 partition preserves the ~1.3% phishing rate. Pass `--val-fraction` /
 `--test-fraction` to change the ratio.
 
-## Docker
-
-```bash
-docker compose up --build
-# Streamlit  -> http://localhost:8501
-# MLflow UI  -> http://localhost:5000
-# REST API   -> http://localhost:8000/docs
-```
-
-`data/`, `models/` and `mlruns/` are mounted as volumes so datasets, saved model
-versions and experiment runs persist across restarts. The `api` service shares
-the `models/` volume, so a version saved by the Streamlit container is
-immediately visible to the API container without a rebuild.
-
 ## Experiment tracking with MLflow
 
 Every training run can be logged to **MLflow** — params, CV/validation/test
@@ -196,7 +182,6 @@ uv run python scripts/per_model_embedding.py  --csv data/email_phishing_data.csv
 ```bash
 MLFLOW_ALLOW_FILE_STORE=true uv run mlflow ui --backend-store-uri file:./mlruns
 # then open http://localhost:5000
-# (or, with Docker, the mlflow-ui service is already on http://localhost:5000)
 ```
 
 `MLFLOW_ALLOW_FILE_STORE=true` is required because MLflow treats the local
