@@ -117,8 +117,9 @@ if uses_nn_embedding:
         dropout2 = st.slider("Layer 2 dropout", 0.0, 0.9, 0.4, 0.05)
     with ec3:
         embedding_dim = st.number_input(
-            "Embedding (output) width", 4, 128, 20, 4,
-            help="Width of the reusable embedding layer fed to the boosters.",
+            "Embedding (output) width", 4, 128, 16, 4,
+            help="Width of the reusable embedding layer fed to the boosters "
+            "(default 16, matching NNEmbedding's default).",
         )
         patience = st.number_input(
             "Early-stop patience", 5, 500, 50, 5,

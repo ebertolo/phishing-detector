@@ -10,7 +10,10 @@ __pycache__/
 uv.lock
 
 # Project artifacts
-models/
+# Anchored to the repo root so it only ignores the top-level saved-model
+# artifacts dir, NOT the src/phishing/models/ source package (which an
+# unanchored "models/" would also match at any depth).
+/models/
 mlruns/
 mlartifacts/
 mlflow.db

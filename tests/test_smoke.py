@@ -283,16 +283,18 @@ def test_tensorflow_dnn_trains_saves_loads(tmp_path):
     assert set(np.unique(preds)).issubset({0, 1})
 
 
-def test_nn_embedding_produces_20_features():
-    """NNEmbedding emits 20 nn_* columns and is leakage-safe (needs y)."""
+def test_nn_embedding_produces_default_features():
+    """NNEmbedding emits embedding_dim nn_* columns (default 16) and is leakage-safe."""
     from phishing.features.nn_embedding import NNEmbedding
 
     df = make_dataset(n=600, pos_rate=0.1, seed=3)
     X, y = data_mod.split_X_y(df)
-    emb = NNEmbedding(epochs=15, keep_raw=True).fit(X, y)
-    out = emb.transform(X)
+    emb = NNEmbedding(epochs=15, keep_raw=True)
+    fitted = emb.fit(X, y)
+    out = fitted.transform(X)
     nn_cols = [c for c in out.columns if c.startswith("nn_")]
-    assert len(nn_cols) == 20
+    assert len(nn_cols) == 16
+    assert emb.embedding_dim == 16  # the new default width
 
 
 @pytest.mark.parametrize("dim,periodic", [(32, False), (32, True), (64, False)])

@@ -35,7 +35,7 @@ RandomForest, two logistic regressions (`logreg` plain, `logreg_woe` over WOE),
 and four additional independent algorithms:
 
 - **`tensorflow_dnn`** — Keras dense net: `Dense(40)→BN→Dropout(0.4)` →
-  `Dense(20)→BN→Dropout(0.4)` → skip-`Concatenate` → 20-d `embedding` →
+  `Dense(20)→BN→Dropout(0.4)` → skip-`Concatenate` → 16-d `embedding` →
   `UnitNormalization` → `tanh` score in [-1, 1] (mapped to a probability and
   calibrated). The BatchNorm / unit-normalization / concatenate operations are
   the "between-layer operations without their own gradient descent". Optimizers

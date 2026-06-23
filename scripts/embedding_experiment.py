@@ -8,8 +8,8 @@ CV fold — correct but very slow. This script instead:
    the embedding never sees val/test), using SGD with a small learning rate and
    a momentum schedule, reporting how many epochs early stopping used;
 3. saves the embedding model as a versioned artifact;
-4. pre-computes the 20 ``nn_*`` embedding features for every split and appends
-   them to the engineered features;
+4. pre-computes the ``nn_*`` embedding features (default 16) for every split and
+   appends them to the engineered features;
 5. runs the boosters + blend on the combined features (``feature_mode="raw"``,
    so nothing is retrained per fold), and prints the comparison.
 
@@ -55,7 +55,7 @@ def _engineer_all(split: DataSplit) -> tuple[FeatureEngineer, DataSplit]:
 
 # %%
 def _append_embedding(split: DataSplit, embedder) -> DataSplit:
-    """Append the 20 nn_* embedding columns to every split's features."""
+    """Append the nn_* embedding columns to every split's features."""
     def add(X):
         emb = embedder.transform(X)
         nn = emb[[c for c in emb.columns if c.startswith("nn_")]].reset_index(drop=True)
@@ -121,8 +121,10 @@ def main(argv=None) -> int:
             path = w.save(epochs_trained=embedder.n_epochs_trained_)
             print(f"Saved embedding model -> {path}")
 
+        n_before = split.X_train.shape[1]
         split = _append_embedding(split, embedder)
-        print(f"Features after embedding: {split.X_train.shape[1]} (+20 nn_*)")
+        n_added = split.X_train.shape[1] - n_before
+        print(f"Features after embedding: {split.X_train.shape[1]} (+{n_added} nn_*)")
 
     results, ensembles = run_experiments(
         split,

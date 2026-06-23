@@ -399,12 +399,24 @@ def _build_blend(results, split, threshold_cfg, log_mlflow) -> dict[str, Any]:
         "wrapper": blend_wrapper,
     }
     if log_mlflow:
+        # Log the same diagnostic curves the individual models log, computed on
+        # the blend's held-out test scores (parity with _log_fit_run).
+        figures = {
+            "pr_curve": plots.pr_curve_figure(split.y_test, test_blend_scores),
+            "roc_curve": plots.roc_curve_figure(split.y_test, test_blend_scores),
+            "confusion": plots.confusion_figure(
+                compute_metrics(
+                    np.asarray(split.y_test), test_blend_scores, thr.threshold
+                ).confusion
+            ),
+        }
         info["mlflow_run_id"] = tracking.log_fit(
             model_name="blend",
             params={"weights": dict(zip(names, blend.weights.tolist()))},
             cv_metrics={"pr_auc": float(blend.val_pr_auc)},
             val_metrics=val_metrics,
             test_metrics=test_metrics,
+            figures=figures,
             tags={"kind": "blend"},
         )
     return info

@@ -1,10 +1,11 @@
-"""Neural-network embedding transformer (reusable 20-d representation).
+"""Neural-network embedding transformer (reusable dense representation).
 
 Trains the same dense network used by ``tensorflow_dnn`` (on the training data
-only, so it is leakage-safe) and exposes the 20 activations of its named
-``embedding`` layer as new features ``nn_0 .. nn_19``. Any model can then consume
+only, so it is leakage-safe) and exposes the activations of its named
+``embedding`` layer as new features ``nn_0 .. nn_{embedding_dim-1}`` (the width is
+the ``embedding_dim`` hyperparameter, default 16). Any model can then consume
 this embedding via the ``engineered_nnembed`` feature mode, "using the last layer
-as an embedding / 20 extra features for the other models" as requested.
+as an embedding / extra features for the other models" as requested.
 
 TensorFlow is imported lazily. The embedding sub-model and scaler are stored on
 the instance; like the DNN model, the Keras object is serialised to bytes for a
@@ -49,7 +50,7 @@ def _momentum_ramp_callback(optimizer, start, end, total_epochs):
 
 # %%
 class NNEmbedding(BaseEstimator, TransformerMixin):
-    """Train the dense net and emit its 20-d embedding-layer activations.
+    """Train the dense net and emit its embedding-layer activations (default 16-d).
 
     Parameters
     ----------
@@ -68,7 +69,7 @@ class NNEmbedding(BaseEstimator, TransformerMixin):
         momentum_schedule: bool = False,
         patience: int = 50,
         random_state: int = 42,
-        embedding_dim: int = 20,
+        embedding_dim: int = 16,
         periodic: bool = False,
         cosine_schedule: bool = False,
         dropout: float = 0.4,

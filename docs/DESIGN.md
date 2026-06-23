@@ -65,7 +65,7 @@ src/phishing/
     autoencoder.py    AutoencoderEncoder — CPU MLP latent + denoising reconstruction
     interactions.py   InteractionFeatures — explicit pairwise products
     smoothing.py      FeatureSmoothing — winsorize + quantile (noise-robust)
-    nn_embedding.py   NNEmbedding — 20-d dense-net embedding (leakage-safe, pre-trained)
+    nn_embedding.py   NNEmbedding — dense-net embedding, default 16-d (leakage-safe, pre-trained)
     selection.py      mutual information + RandomForest importance
   models/             one file per algorithm, common build()/param_grid() interface
     lightgbm_model.py xgboost_model.py catboost_model.py randomforest_model.py
@@ -270,7 +270,7 @@ authenticate.
   single-model training or batch inference on a CSV from the command line.
 - **CLI (embedding)** — `uv run python scripts/embedding_experiment.py --csv <file>`:
   pre-train the NN embedding once on the train split, freeze it, and evaluate
-  boosters that reuse the 20 frozen features.
+  boosters that reuse the frozen features (default 16-d).
 - **REST API** — `uv run uvicorn fastapi_app.main:app --port 8000`: serves a
   saved model version over HTTP (`POST /predict`); see the "REST API" section
   above and [`fastapi_app/README.md`](../fastapi_app/README.md).

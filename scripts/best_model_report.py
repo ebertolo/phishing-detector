@@ -59,7 +59,7 @@ def main(argv=None) -> int:
     p.add_argument("--test-fraction", type=float, default=0.0526)
     p.add_argument("--seed", type=int, default=42)
     # Embedding architecture knobs.
-    p.add_argument("--embedding-dim", type=int, default=20)
+    p.add_argument("--embedding-dim", type=int, default=16)
     p.add_argument("--embedding-hidden1-dim", type=int, default=40,
                     help="Width of the embedding net's 1st intermediate layer.")
     p.add_argument("--embedding-hidden2-dim", type=int, default=20,
@@ -85,7 +85,10 @@ def main(argv=None) -> int:
         "even if a matching cached one exists.",
     )
     # Booster hyperparameter search + ensembling.
-    p.add_argument("--search", default="grid", choices=["grid", "random"])
+    # Default 'random': RandomizedSearchCV over wider param distributions is what
+    # produced the headline result (~0.44 blend); plain grid search undertunes
+    # the boosters (~0.37). See docs/RESULTS.md.
+    p.add_argument("--search", default="random", choices=["grid", "random"])
     p.add_argument("--n-iter", type=int, default=40)
     p.add_argument("--cv-folds", type=int, default=3)
     p.add_argument("--stacking", action="store_true",
@@ -139,7 +142,7 @@ def main(argv=None) -> int:
 
     # Train the NN embedding once on the train split (leakage-safe) and freeze it.
     # The embedding input width auto-adjusts to the engineered feature count;
-    # its output stays at --embedding-dim (default 20). A cached embedding is
+    # its output stays at --embedding-dim (default 16). A cached embedding is
     # reused when every hyperparameter and the input columns/row count match a
     # previous run (see core.embedding_cache); --force-embedding-search ignores it.
     feature_columns = list(Xtr.columns)
@@ -229,7 +232,7 @@ def main(argv=None) -> int:
 
     def report(name, m):
         print(f"\n=== {name} | held-out test ===")
-        print(f"threshold (max-F1): {m.threshold:.4f}")
+        print(f"threshold ({args.threshold_mode}): {m.threshold:.4f}")
         print(f"PR-AUC   : {m.pr_auc:.4f}")
         print(f"ROC-AUC  : {m.roc_auc:.4f}")
         print(f"precision: {m.precision:.4f}")
@@ -254,7 +257,7 @@ def main(argv=None) -> int:
         # Stacking's test_metrics are already computed on this test set by the runner.
         tm = ensembles["stacking"]["test_metrics"]
         print("\n=== Stacking (logistic meta) + frozen NN embedding | held-out test ===")
-        print(f"threshold (max-F1): {tm['threshold']:.4f}")
+        print(f"threshold ({args.threshold_mode}): {tm['threshold']:.4f}")
         for k in ("pr_auc", "roc_auc", "precision", "recall", "f1", "mcc"):
             print(f"{k:9s}: {tm[k]:.4f}")
         print(f"confusion [[tn fp][fn tp]] = [[{tm['tn']} {tm['fp']}][{tm['fn']} {tm['tp']}]]")

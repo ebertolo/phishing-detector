@@ -5,8 +5,9 @@ Answers two questions on the current (rich) engineered features:
 2. Does the frozen NN embedding still help per model?
 
 Trains each booster individually (RandomizedSearch) on the engineered features,
-once **without** the embedding and once **with** the frozen 20-dim embedding
-appended, on the 90/5/5 split. Prints test PR-AUC for every cell plus a summary.
+once **without** the embedding and once **with** the frozen NN embedding
+(default 16-dim) appended, on the 90/5/5 split. Prints test PR-AUC for every cell
+plus a summary.
 Progress is timestamped.
 
 Run: uv run python scripts/per_model_embedding.py --csv data/email_phishing_data.csv
@@ -68,9 +69,9 @@ def main(argv=None) -> int:
 
     base = DataSplit(Xtr, split.y_train, Xval, split.y_val, Xte, split.y_test)
 
-    log("Training NN embedding once (dim=20) ...")
     embedder = NNEmbedding(optimizer="sgd", learning_rate=0.005, epochs=1000,
                            batch_size=512, momentum_schedule=True, keep_raw=False)
+    log(f"Training NN embedding once (dim={embedder.embedding_dim}) ...")
     embedder.fit(Xtr, split.y_train)
     log(f"Embedding stopped after {embedder.n_epochs_trained_} epochs.")
 

@@ -66,9 +66,10 @@ the REST API identically — no modeling logic is duplicated in any of them.
   **stacking**; calibration is sigmoid or isotonic.
 - **Threshold:** chosen on validation — recall-target with precision floor,
   max-F1, manual, or cost-sensitive (`fn_cost`/`fp_cost`).
-- **NN embedding:** the dense net's 20-d embedding can be pre-trained once on the
-  train split and reused as frozen features — a small but real gain on the full
-  dataset (see `scripts/embedding_experiment.py`).
+- **NN embedding:** the dense net's embedding (default 16-d, set via
+  `--embedding-dim`) can be pre-trained once on the train split and reused as
+  frozen features — a small but real gain on the full dataset (see
+  `scripts/embedding_experiment.py`).
 
 See **[docs/EXPERIMENT_JOURNEY.md](docs/EXPERIMENT_JOURNEY.md)** for how the model
 evolved, what was discarded, and why.
@@ -133,7 +134,9 @@ metrics (evaluation mode), otherwise it outputs predictions only.
 
 ```bash
 # Blend + XGBoost on engineered features + frozen NN embedding, 90/5/5 split,
-# prints both confusion matrices on the clean 5% test holdout
+# prints both confusion matrices on the clean 5% test holdout.
+# Defaults to RandomizedSearch (--search random --n-iter 40), which is what
+# reproduces the headline blend PR-AUC ~0.44; add --stacking for the meta-model.
 uv run python scripts/best_model_report.py --csv data/email_phishing_data.csv
 ```
 

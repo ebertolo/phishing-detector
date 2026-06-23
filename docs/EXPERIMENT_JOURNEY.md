@@ -299,7 +299,7 @@ count features — but every step is a real, leakage-safe gain. Reproduce with
 embedding training are now cached (see `param_cache`/`embedding_cache` in
 [DESIGN.md](DESIGN.md#caching)), so a repeated run with the same configuration
 finishes in roughly a minute instead of close to an hour — see
-[RESULTS.md](RESULTS.md#caching) for measured timings.
+[RESULTS.md](RESULTS.md#hyperparameter-and-embedding-caching) for measured timings.
 
 ---
 
