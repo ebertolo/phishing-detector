@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# uv / venv
+.venv/
+uv.lock
+
+# Project artifacts
+models/
+mlruns/
+mlartifacts/
+mlflow.db
+embeddings/
+data/*.csv
+data/*.parquet
+!data/.gitkeep
+
+# Library temp/working dirs (CatBoost, XGBoost, etc.)
+catboost_info/
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

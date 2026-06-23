@@ -1,0 +1,26 @@
+{
+  "model_name": "lightgbm",
+  "feature_mode": "raw",
+  "search_method": "grid",
+  "n_iter": 40,
+  "n_splits": 3,
+  "feature_columns": [
+    "num_words",
+    "num_unique_words",
+    "num_stopwords",
+    "num_links",
+    "num_unique_domains",
+    "num_email_addresses",
+    "num_spelling_errors",
+    "num_urgent_keywords"
+  ],
+  "best_params": {
+    "model__learning_rate": 0.03,
+    "model__min_child_samples": 20,
+    "model__n_estimators": 400,
+    "model__num_leaves": 15
+  },
+  "cv_pr_auc": 1.0,
+  "created_at": "2026-06-23T17:13:34Z",
+  "cache_key": "925f6c1fee38d815"
+}

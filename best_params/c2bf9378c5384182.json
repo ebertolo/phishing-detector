@@ -1,0 +1,23 @@
+{
+  "model_name": "logreg",
+  "feature_mode": "engineered",
+  "search_method": "random",
+  "n_iter": 40,
+  "n_splits": 3,
+  "feature_columns": [
+    "num_words",
+    "num_unique_words",
+    "num_stopwords",
+    "num_links",
+    "num_unique_domains",
+    "num_email_addresses",
+    "num_spelling_errors",
+    "num_urgent_keywords"
+  ],
+  "best_params": {
+    "model__C": 0.01
+  },
+  "cv_pr_auc": 0.9999999999999999,
+  "created_at": "2026-06-23T14:00:12Z",
+  "cache_key": "c2bf9378c5384182"
+}
