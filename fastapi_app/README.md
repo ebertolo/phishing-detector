@@ -27,10 +27,29 @@ uv run uvicorn fastapi_app.main:app --reload --port 8000
 - Health check (**no token needed**): http://localhost:8000/health
 
 By default the API loads the **most recently saved** model version (same
-logic as `scripts/cli.py infer`). To pin a specific version instead, set:
+logic as `scripts/cli.py infer`). To pin a specific version instead, set
+`MODEL_VERSION_DIR` before launching:
 
 ```bash
-MODEL_VERSION_DIR=models/lightgbm__20260619T230000Z uv run uvicorn fastapi_app.main:app --port 8000
+# bash / zsh (Linux / macOS / Git Bash)
+export MODEL_VERSION_DIR=models/lightgbm__20260619T230000Z
+uv run uvicorn fastapi_app.main:app --port 8000
+```
+
+```powershell
+# PowerShell (Windows)
+$env:MODEL_VERSION_DIR = "models/lightgbm__20260619T230000Z"
+uv run uvicorn fastapi_app.main:app --port 8000
+```
+
+Alternatively, create a `.env` file in the project root and source it before
+running (the app reads the variable via `os.environ` — no dotenv library is
+needed, just export it in your shell before `uv run`):
+
+```bash
+# .env (source manually: source .env  or  . .env)
+export MODEL_VERSION_DIR=models/lightgbm__20260619T230000Z
+export API_TOKEN=changeme-dev-token
 ```
 
 ## Authentication

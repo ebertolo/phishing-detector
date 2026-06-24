@@ -17,6 +17,7 @@ uv.lock
 mlruns/
 mlartifacts/
 mlflow.db
+mlflow.db-journal
 embeddings/
 data/*.csv
 data/*.parquet
@@ -25,6 +26,10 @@ data/*.parquet
 # Library temp/working dirs (CatBoost, XGBoost, etc.)
 catboost_info/
 *.log
+
+# Environment / secrets
+.env
+.env.*
 
 # OS / editor
 .DS_Store

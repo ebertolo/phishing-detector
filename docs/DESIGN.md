@@ -76,7 +76,7 @@ src/phishing/
     tracking.py       MLflow logging for fit and inference
     plots.py          PR / ROC / confusion / importance figures
   experiments/
-    runner.py         GridSearchCV-over-StratifiedKFold per model + blend + stacking
+    runner.py         hyperparameter search (GridSearchCV or RandomizedSearchCV) over StratifiedKFold per model + blend + stacking
 app/
   streamlit_app.py    dataset selection + overview
   pages/              1_Explore · 2_Importance · 3_Train_and_Compare · 4_Inference
@@ -88,12 +88,13 @@ scripts/
   experiment_top3.py   one-off: top-3-features experiment (kept for reference)
 ```
 
-The model roster (see `models.ALL_MODELS`): the recommended boosters
-(LightGBM/XGBoost/CatBoost), CatBoost focal, RandomForest, two logistic
-regressions; plus models kept as comparison baselines / experiments —
-LightGBM/XGBoost focal, clustering, AdaBoost, and the TensorFlow dense net.
-`DEFAULT_MODELS` is the three recommended boosters. See
-[EXPERIMENT_JOURNEY.md](EXPERIMENT_JOURNEY.md) for what was discarded and why.
+The model roster (see `models.ALL_MODELS`): **recommended** — the three boosters
+(LightGBM/XGBoost/CatBoost, `DEFAULT_MODELS`), CatBoost focal, RandomForest,
+`logreg_woe`; **discarded / kept as baselines** — `logreg` (0.069), `adaboost`
+(0.021), `cluster` (0.013), `tensorflow_dnn` (~0.08 standalone), LightGBM/XGBoost
+focal (unstable at ~1.3% imbalance). See
+[EXPERIMENT_JOURNEY.md §3](EXPERIMENT_JOURNEY.md#3-models-tested--discarded-kept-and-why-ensembling--calibration)
+for the evidence.
 
 ### The generic wrapper
 
@@ -115,29 +116,39 @@ handled inside each estimator — `scale_pos_weight` (LightGBM/XGBoost),
 
 ## Feature pipeline
 
-`feature_mode` is chosen per experiment and selects an optional **feature
-engineering** layer plus an **encoding**:
+`feature_mode` is chosen per experiment. The recommended path — backed by
+experiment results — is `engineered` then `engineered_nnembed`. All other modes
+are kept selectable for validation; see
+[EXPERIMENT_JOURNEY.md §2](EXPERIMENT_JOURNEY.md#2-feature-engineering--versions-and-the-transformation-sequence)
+and [ML_STACK.md](ML_STACK.md#feature-transformers-selectable-via---feature-mode)
+for numbers and rationale.
 
-- **`engineered`** (recommended default) — the deterministic `FeatureEngineer`
-  prepends presence flags (`has_emails`, `has_links`, ...), log transforms
-  (`log_*`) and ratios (`lexical_diversity`, `spelling_rate`, ...) to the raw
-  counts. Data analysis showed the raw counts are heavy-tailed and zero-inflated,
-  so *presence* carries more signal than magnitude; this lifted PR-AUC ~33% over
-  raw (see `RESULTS.md`). The transform is row-wise and target-free, so it is
-  leakage-safe by construction.
-- **`raw`** — integer counts straight into the model (boosters bin internally).
-- **`binned_woe`** — `OptimalBinningWOE`: supervised optimal binning → WOE; the
-  most explainable representation and the natural input to `logreg_woe` (which
-  always uses WOE regardless of the flag).
-- **`quantile`** — `QuantileBinner` (`KBinsDiscretizer`), unsupervised ordinal bins.
-- **`target`** — `CrossFitTargetEncoder`, out-of-fold mean-target encoding.
-- **`autoencoder`** — `AutoencoderEncoder`, CPU MLP latent features (experimental).
-- **`engineered_<enc>`** — feature engineering followed by any encoding above.
+**Recommended (in order of proven PR-AUC):**
+
+- **`engineered`** — deterministic `FeatureEngineer`: 8 raw counts → 52 features
+  (presence flags, log transforms, densities, ratios, interactions, leakage-safe
+  logz). Row-wise and target-free. **+33% PR-AUC over raw.** Default.
+- **`engineered_nnembed`** — engineering + 16 frozen NN embedding features
+  (net trained once on the train split, never per fold). **+~0.015 PR-AUC per
+  booster** on the full 524k-row dataset; hurts on 100k samples.
+
+**Available for validation / comparison (discarded as defaults):**
+
+- **`raw`** — integer counts straight in; beats all pre-discretising encodings
+  (0.209) but is surpassed by `engineered`.
+- **`binned_woe`** — optimal binning + WOE (PR-AUC 0.111); natural input to
+  `logreg_woe` for interpretability.
+- **`quantile`** — `KBinsDiscretizer` ordinal bins (0.101); target-free.
+- **`target`** — cross-fit mean-target encoding (0.043); worst for these sparse counts.
+- **`autoencoder`** — CPU MLP bottleneck features; experimental, not benchmarked.
+- **`engineered_smooth`** / **`engineered_denoise`** — post-engineering smoothing /
+  denoising (PR-AUC 0.236 / 0.145 vs 0.247 plain); both discarded.
+- **`engineered_noemail`** / **`ix_raw`** / **`ix_engineered`** — ablation and
+  interaction variants; diagnostic only.
 
 Supervised encoders (WOE, target) are **leakage-safe**: fit inside each CV fold
 (WOE) or via out-of-fold statistics (target), applying learned mappings only at
-transform time. On this data, `engineered` on raw counts beat every pre-encoding
-variant, so it is the default; the encodings remain selectable for validation.
+transform time.
 
 ## Recommended default
 
@@ -155,8 +166,15 @@ for the evidence behind these choices and what was discarded.
 For each selected model the runner:
 
 1. builds the pipeline for the chosen `feature_mode`;
-2. runs **`GridSearchCV` over `StratifiedKFold`** (default 5 folds) scored by
-   PR-AUC (the refit metric);
+2. runs **`GridSearchCV` or `RandomizedSearchCV`** over `StratifiedKFold`, scored by
+   PR-AUC (the refit metric); the search method is controlled by `--search grid|random`
+   — `run_experiments.py` defaults to `grid`, `best_model_report.py` defaults to
+   `random` (RandomizedSearch over wider param distributions, which is what reproduces
+   the headline PR-AUC ~0.44); the number of CV folds is controlled by `--cv-folds`
+   — `run_experiments.py` and `cli.py` default to **5 folds** (more robust), while
+   `best_model_report.py` and the embedding scripts (`embedding_experiment.py`,
+   `per_model_embedding.py`, `embedding_arch_sweep.py`) default to **3 folds** (faster
+   iteration over the full 524k-row dataset);
 3. **calibrates** the best estimator's probabilities on the validation set
    (`CalibratedClassifierCV` over a `FrozenEstimator`) so blending and thresholds
    act on trustworthy probabilities;

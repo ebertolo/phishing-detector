@@ -12,11 +12,14 @@ tuned threshold offered alongside it for convenience.
 The project runs entirely on **CPU** by default — every dependency and
 default configuration was chosen so the full loop (train, compare, save,
 infer) works with no GPU. **GPU support was also implemented** for the parts
-that benefit most from it (LightGBM/XGBoost/CatBoost training, the
+that benefit most from it (XGBoost/CatBoost training and the
 TensorFlow NN embedding): it is detected automatically and used when
 available, with no configuration needed, and falls back to CPU when it is
 not — see [docs/colab_experiments.ipynb](docs/colab_experiments.ipynb) for a
 Colab GPU walkthrough.
+
+See **[docs/EXPERIMENT_JOURNEY.md](docs/EXPERIMENT_JOURNEY.md)** for how the model
+evolved, what was discarded, and why.
 
 ## What's delivered
 
@@ -71,8 +74,7 @@ the REST API identically — no modeling logic is duplicated in any of them.
   frozen features — a small but real gain on the full dataset (see
   `scripts/embedding_experiment.py`).
 
-See **[docs/EXPERIMENT_JOURNEY.md](docs/EXPERIMENT_JOURNEY.md)** for how the model
-evolved, what was discarded, and why.
+
 
 ## Quickstart (uv is the project standard — no pip)
 
