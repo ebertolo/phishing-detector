@@ -263,3 +263,15 @@ pre-trained version or a running server.
 > same uv-managed environment and avoids it. The test suite forces sequential
 > hyperparameter search (`PHISHING_SEARCH_N_JOBS=1`, set in `conftest.py`) so the
 > joblib/loky parallel-worker teardown can't crash the interpreter on exit.
+
+## Running the best model on the full dataset (Windows PowerShell)
+
+Use the command below in **Windows PowerShell** to reproduce the headline result.
+`PHISHING_SEARCH_N_JOBS=1` forces sequential hyperparameter search to avoid a
+Windows joblib/loky crash after the run completes. `Select-Object -Last 60`
+trims the output to the final summary table so the terminal doesn't scroll past
+the results.
+
+```powershell
+$env:PHISHING_SEARCH_N_JOBS = "1"; uv run python scripts/best_model_report.py --csv data/email_phishing_data.csv --search random --n-iter 40 2>&1 | Select-Object -Last 60
+```
