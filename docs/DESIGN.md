@@ -305,12 +305,16 @@ guidance.
 
 ## Verification
 
-- `uv run pytest` — end-to-end smoke tests (split → CV/GridSearch → calibrate →
-  blend/stacking → threshold → metrics → save → load → predict) plus coverage of
-  the encodings, the new models (NN, logreg, cluster, AdaBoost), the NN embedding,
-  smoothing/denoising, cost threshold, BlendModel round-trip, the two caches, and
-  the FastAPI endpoints (`fastapi_app/tests/`, included via the same `pytest`
-  invocation — `testpaths` covers both `tests/` and `fastapi_app/tests/`).
+- `uv run python -m pytest` — end-to-end smoke tests (split → CV/GridSearch →
+  calibrate → blend/stacking → threshold → metrics → save → load → predict) plus
+  coverage of the encodings, the new models (NN, logreg, cluster, AdaBoost), the
+  NN embedding, smoothing/denoising, cost threshold, BlendModel round-trip, the
+  two caches, and the FastAPI endpoints (`fastapi_app/tests/`, included via the
+  same invocation — `testpaths` covers both `tests/` and `fastapi_app/tests/`).
+  Use the `python -m pytest` module form, not `uv run pytest` (the bare-script
+  form trips a uv trampoline bug on Windows). The test conftests set
+  `PHISHING_SEARCH_N_JOBS=1` to force sequential hyperparameter search, avoiding a
+  Windows joblib/loky teardown crash.
 - `uv run python scripts/make_sample_data.py` — synthetic 1% dataset.
 - `uv run python scripts/run_experiments.py --csv data/email_phishing_data.csv`
   — full suite on the real data.

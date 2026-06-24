@@ -9,10 +9,16 @@ pre-trained model to exist.
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 import pytest
+
+# Force sequential hyperparameter search during tests — see tests/conftest.py for
+# the full rationale (avoids a Windows joblib/loky teardown StackOverflowException
+# when the runner trains a model with the default n_jobs=-1).
+os.environ.setdefault("PHISHING_SEARCH_N_JOBS", "1")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from make_sample_data import make_dataset  # noqa: E402

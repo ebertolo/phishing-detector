@@ -1,6 +1,17 @@
 """Shared pytest fixtures."""
 
+import os
+
 import pytest
+
+# Force the experiment runner's hyperparameter search to run sequentially during
+# tests. On Windows, joblib/loky's parallel-worker teardown (the default
+# n_jobs=-1) can crash the interpreter with a native StackOverflowException after
+# the search finishes — the tests pass, but the process dies on exit (exit code
+# 9/253). Setting this before any test imports/runs the runner avoids it and
+# keeps `uv run pytest tests/ -v` green on Windows. Has no effect on production
+# runs, which do not set this var.
+os.environ.setdefault("PHISHING_SEARCH_N_JOBS", "1")
 
 
 @pytest.fixture(autouse=True)

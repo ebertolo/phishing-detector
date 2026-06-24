@@ -9,7 +9,7 @@ numbers, see [RESULTS.md](RESULTS.md).
 ## Core ML libraries
 
 | Library | Role here |
-|---|---|
+| --- | --- |
 | **scikit-learn** | Pipelines, `GridSearchCV` / `RandomizedSearchCV`, `StratifiedKFold`, calibration (`CalibratedClassifierCV` + `FrozenEstimator`), metrics, `KBinsDiscretizer`, `QuantileTransformer`, `RandomForest`, `LogisticRegression`, `AdaBoost`, `KMeans`/`GaussianMixture`, the `MLPRegressor` (auto/denoising encoder). The backbone everything plugs into. |
 | **imbalanced-learn** | Imbalance-aware pipeline support for the ~1.3% positive class. We rely mainly on per-model class weighting rather than aggressive resampling. |
 | **XGBoost** | Gradient-boosted trees; imbalance via `scale_pos_weight`. Strong tabular performer. |
@@ -25,8 +25,7 @@ numbers, see [RESULTS.md](RESULTS.md).
 The framework runs entirely on **CPU** by default; LightGBM, XGBoost and
 CatBoost detect a usable GPU at training time and switch automatically
 (`gpu_available()` / `lightgbm_cuda_available()` in `models/_common.py`), and
-the TensorFlow embedding uses any visible GPU with no code change — see
-[`docs/colab_experiments.ipynb`](colab_experiments.ipynb) for a GPU-runtime walkthrough.
+the TensorFlow embedding uses any visible GPU with no code change.
 
 ## Model roster
 
@@ -119,22 +118,26 @@ headline.
 ## Ensembling
 
 ### Per-model comparison
+
 Each algorithm is tuned independently (`GridSearchCV` or `RandomizedSearchCV`
 over `StratifiedKFold`, scored by PR-AUC; controlled by `--search grid|random`)
 and compared on a held-out test set.
 
 ### Probability calibration
+
 Before combining, each best model's probabilities are calibrated on the
 validation set (`CalibratedClassifierCV` wrapping a `FrozenEstimator`). Blending
 and threshold tuning then operate on trustworthy probabilities.
 
 ### Blending (the default combiner here)
+
 A **weighted average** of the calibrated base-model probabilities. Weights are
 searched on the validation set to maximise PR-AUC (equal-weight average is always
 a candidate). Simple, robust, and low-leakage — the blend flows through the same
 threshold/metrics/persistence path as a single model.
 
 ### Stacking (implemented)
+
 A logistic **meta-model** (`core/stacking.py`) fit on the base models' validation
 probabilities — the held-out set they were not trained on, keeping it
 leakage-safe within the train/val/test split. Enable with `--stacking`. In
@@ -142,11 +145,13 @@ experiments it lands just behind the blend on PR-AUC but reaches **higher
 recall**, which can be preferable operationally.
 
 ### Calibration: sigmoid vs isotonic
+
 Base probabilities are calibrated on validation before blending/stacking.
 `--calibration sigmoid` (Platt, robust with little data, default) or
 `--calibration isotonic` (non-parametric, needs more validation samples).
 
 ### Focal loss boosters
+
 Focal loss down-weights easy negatives to focus on hard examples. **CatBoost
 focal** (`catboost_focal`, native loss) works well and even contributes to the
 winning blend. The **LightGBM/XGBoost focal** variants use a hand-rolled custom
@@ -157,6 +162,7 @@ the robust choice).
 ## Threshold tuning
 
 The operating point is chosen on validation, not fixed at 0.5:
+
 - **recall-target** — minimum recall X with precision ≥ Y (false negatives cost
   more in phishing);
 - **max-F1**;

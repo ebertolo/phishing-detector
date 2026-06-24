@@ -17,6 +17,7 @@ core logic — no Streamlit/FastAPI — and is independently runnable as cells.
 # %%
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -167,6 +168,13 @@ def run_model(
         # models keep full CPU parallelism.
         gpu_check = _GPU_CHECK.get(name)
         search_n_jobs = 1 if (gpu_check is not None and gpu_check()) else -1
+        # Allow forcing sequential search via env var. On Windows, joblib/loky's
+        # parallel-worker teardown (n_jobs=-1) can trigger a native
+        # StackOverflowException after the search completes — set
+        # PHISHING_SEARCH_N_JOBS=1 (the test suite does this) to avoid it.
+        n_jobs_override = os.environ.get("PHISHING_SEARCH_N_JOBS")
+        if n_jobs_override:
+            search_n_jobs = int(n_jobs_override)
 
         if search_method == "random":
             space = getattr(module, "param_distributions", module.param_grid)()

@@ -15,8 +15,7 @@ infer) works with no GPU. **GPU support was also implemented** for the parts
 that benefit most from it (XGBoost/CatBoost training and the
 TensorFlow NN embedding): it is detected automatically and used when
 available, with no configuration needed, and falls back to CPU when it is
-not — see [docs/colab_experiments.ipynb](docs/colab_experiments.ipynb) for a
-Colab GPU walkthrough.
+not.
 
 See **[docs/EXPERIMENT_JOURNEY.md](docs/EXPERIMENT_JOURNEY.md)** for how the model
 evolved, what was discarded, and why.
@@ -28,7 +27,6 @@ evolved, what was discarded, and why.
 | **Core package** `src/phishing/` | The reusable engine — feature engineering, models, training loop, metrics, persistence — with no UI/framework imports, so the same logic backs every interface below. See [docs/DESIGN.md](docs/DESIGN.md). |
 | **Experiment scripts** `scripts/` | Headless CLIs (`run_experiments.py`, `cli.py`, `best_model_report.py`, ...) for running experiments from a console, a batch job, or CI/CD. See [Command-line usage](#command-line-usage-headless-no-ui) below. |
 | **Streamlit application** `app/` | An interactive UI for Engineering, Data, or Product to explore data, compare models, tune thresholds, and run inference without writing code. See [Quickstart](#quickstart-uv-is-the-project-standard--no-pip) below. |
-| **Google Colab notebook** `docs/colab_experiments.ipynb` | Runs the same experiments with easy access to a free GPU runtime, for faster iteration than a local CPU. See [Running on Google Colab](#running-on-google-colab-gpu) below. |
 | **REST API** `fastapi_app/` | A FastAPI service serving the best-trained model, with fixed-token authentication and a public Swagger/ReDoc documentation page. See [REST API](#rest-api) below. |
 | **MLflow** `./mlruns` | Experiment tracking — every training run and inference batch can be logged and compared. See [Experiment tracking with MLflow](#experiment-tracking-with-mlflow) below. |
 | **Documentation** `docs/` | The technical design, the experiment journey (what was tried, kept, and discarded, and why), concrete results tables, and the prioritised backlog. See [Documentation](#documentation) below. |
@@ -73,8 +71,6 @@ the REST API identically — no modeling logic is duplicated in any of them.
   `--embedding-dim`) can be pre-trained once on the train split and reused as
   frozen features — a small but real gain on the full dataset (see
   `scripts/embedding_experiment.py`).
-
-
 
 ## Quickstart (uv is the project standard — no pip)
 
@@ -194,19 +190,6 @@ process itself; training/inference runs are logged to `./mlruns` regardless.
 In the UI: pick the `phishing-fit` experiment, sort runs by `test_pr_auc`, and use
 the compare view to overlay PR curves and parameters across models/feature modes.
 
-## Running on Google Colab (GPU)
-
-**[docs/colab_experiments.ipynb](docs/colab_experiments.ipynb)** clones the repo
-into a Colab GPU runtime and runs the same `scripts/*.py` CLIs documented above —
-no separate Colab-only code path. LightGBM, XGBoost and CatBoost auto-detect the
-GPU (`device`/`task_type` set automatically in `src/phishing/models/_common.py`'s
-`gpu_available()`, used by `lightgbm_model.py` / `xgboost_model.py` /
-`catboost_model.py`); TensorFlow (the NN embedding) uses any visible GPU with no
-code change. CPU-only also works — every cell falls back automatically. The
-notebook also includes a guide for editing an existing model's hyperparameters or
-adding a brand-new one (`src/phishing/models/<name>.py` + register in
-`models/__init__.py`), directly from a Colab cell.
-
 ## REST API
 
 `fastapi_app/` serves the best-trained model over HTTP, reusing the same
@@ -260,18 +243,23 @@ which one to predict or validate with.
   models, ensembles, embedding, tuning, full-dataset results).
 - **[docs/Next_Steps.md](docs/Next_Steps.md)** — prioritised improvement backlog
   (what's been tested, what's open) with impact × effort × risk.
-- **[docs/colab_experiments.ipynb](docs/colab_experiments.ipynb)** — run the main
-  experiments on a Google Colab GPU runtime, and a guide to modifying/adding models.
 - **[fastapi_app/README.md](fastapi_app/README.md)** — REST API: how to run it
   locally, authenticate, call `/predict`, and run its test suite.
 
 ## Tests
 
 ```bash
-uv run pytest
+uv run python -m pytest
 ```
 
 Runs the full suite, including `fastapi_app/tests/` (`pyproject.toml`'s
 `testpaths` covers both `tests/` and `fastapi_app/tests/` in one invocation).
 The API tests train a small model on synthetic data and do not require a
 pre-trained version or a running server.
+
+> **Windows note:** invoke pytest as a module (`uv run python -m pytest`), not
+> `uv run pytest`. The bare-script form trips a known uv trampoline bug on
+> Windows (`Failed to canonicalize script path`); `python -m pytest` runs in the
+> same uv-managed environment and avoids it. The test suite forces sequential
+> hyperparameter search (`PHISHING_SEARCH_N_JOBS=1`, set in `conftest.py`) so the
+> joblib/loky parallel-worker teardown can't crash the interpreter on exit.

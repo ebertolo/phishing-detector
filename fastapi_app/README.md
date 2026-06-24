@@ -109,8 +109,12 @@ probability, not a forced 0/1 label):
 ## Tests
 
 ```bash
-uv run pytest fastapi_app/tests/
+uv run python -m pytest fastapi_app/tests/
 ```
+
+Use the `python -m pytest` module form, not `uv run pytest` (the bare-script
+form trips a known uv trampoline bug on Windows — `Failed to canonicalize
+script path`).
 
 Tests train a small model on synthetic data, save it to a temporary
 `models/` directory, point `MODEL_VERSION_DIR` at it, and exercise
